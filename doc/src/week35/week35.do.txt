@@ -9,21 +9,19 @@ DATE: August 28-September 1
 The main topics are:
 
 o Brief repetition from last week
-o Reminder on statistics with quantities like mean values, variance and covariance
+o Derivation of the equations for ordinary least squares
 o Discussion on how to prepare data and examples of applications of linear regression
-o Mathematical interpretations of linear regression
-o Ridge and Lasso regression and Singular Value Decomposition
-
-
+o Material for the lecture on Thursday: Mathematical interpretations of linear regression
+o Thursday: Ridge and Lasso regression and Singular Value Decomposition
+o "Video of lecture":"https://youtu.be/qBNm-HGSxL4"
+o "Whiteboard notes":"https://github.com/CompPhysics/MachineLearning/blob/master/doc/HandWrittenNotes/2023/NotesAug31.pdf"
 
 === Reading recommendations: ===
 
   o See lecture notes for week 35 at URL:"https://compphysics.github.io/MachineLearning/doc/web/course.html"
-  o For	a review on statistics see jupyter-book	URL:"https://compphysics.github.io/MachineLearning/doc/LectureNotes/_build/html/statistics.html", the	most relevant parts are covered by sections 1.1.1-1.1.5
-  o HTF chapter 3. GBC chapters 1 and and sections 3.1-3.11 and 5.1
-  o CMB sections 1.1 and 3.1
-  o A good review on statistics	is given by Murphy's text, chapter 2, see URL:"https://github.com/CompPhysics/MachineLearning/blob/master/doc/Textbooks/MachineLearningMurphy.pdf"
-
+  o Goodfellow, Bengio and Courville, Deep Learning, chapter 2 on linear algebra and sections 3.1-3.10 on elements of statistics (background)
+  o Hastie, Tibshirani and Friedman, The elements of statistical learning, sections 3.1-3.4 (on relevance for the discussion of linear regression).
+  
 
 
 
@@ -51,321 +49,63 @@ For more discussions of Ridge and Lasso regression, "Wessel van Wieringen's":"ht
 Similarly, "Mehta et al's article":"https://arxiv.org/abs/1803.08823" is also recommended.
 
 
-!split
-===== Regression analysis, overarching aims  =====
-!bblock
-
-Regression modeling deals with the description of  the sampling distribution of a given random variable $y$ and how it varies as function of another variable or a set of such variables $\bm{x} =[x_0, x_1,\dots, x_{n-1}]^T$. 
-The first variable is called the _dependent_, the _outcome_ or the _response_ variable while the set of variables $\bm{x}$ is called the independent variable, or the predictor variable or the explanatory variable. 
- 
-A regression model aims at finding a likelihood function $p(\bm{y}\vert \bm{x})$, that is the conditional distribution for $\bm{y}$ with a given $\bm{x}$. The estimation of  $p(\bm{y}\vert \bm{x})$ is made using a data set with 
-* $n$ cases $i = 0, 1, 2, \dots, n-1$ 
-* Response (target, dependent or outcome) variable $y_i$ with $i = 0, 1, 2, \dots, n-1$ 
-* $p$ so-called explanatory (independent or predictor) variables $\bm{x}_i=[x_{i0}, x_{i1}, \dots, x_{ip-1}]$ with $i = 0, 1, 2, \dots, n-1$ and explanatory variables running from $0$ to $p-1$. See below for more explicit examples.   
- The goal of the regression analysis is to extract/exploit relationship between $\bm{y}$ and $\bm{x}$ in or to infer causal dependencies, approximations to the likelihood functions, functional relationships and to make predictions, making fits and many other things.
-!eblock
-
-!split
-===== Regression analysis, overarching aims II =====
-!bblock
 
 
-Consider an experiment in which $p$ characteristics of $n$ samples are
-measured. The data from this experiment, for various explanatory variables $p$ are normally represented by a matrix  
-$\mathbf{X}$.
 
-The matrix $\mathbf{X}$ is called the *design
-matrix*. Additional information of the samples is available in the
-form of $\bm{y}$ (also as above). The variable $\bm{y}$ is
-generally referred to as the *response variable*. The aim of
-regression analysis is to explain $\bm{y}$ in terms of
-$\bm{X}$ through a functional relationship like $y_i =
-f(\mathbf{X}_{i,\ast})$. When no prior knowledge on the form of
-$f(\cdot)$ is available, it is common to assume a linear relationship
-between $\bm{X}$ and $\bm{y}$. This assumption gives rise to
-the *linear regression model* where $\bm{\beta} = [\beta_0, \ldots,
-\beta_{p-1}]^{T}$ are the *regression parameters*. 
 
-Linear regression gives us a set of analytical equations for the parameters $\beta_j$.
-
-!eblock
 
 
 
 !split
-=====  Examples  =====
-!bblock
-In order to understand the relation among the predictors $p$, the set of data $n$ and the target (outcome, output etc) $\bm{y}$,
-consider the model we discussed for describing nuclear binding energies. 
+===== The equations for ordinary least squares  =====
 
-There we assumed that we could parametrize the data using a polynomial approximation based on the liquid drop model.
-Assuming 
+Our data which we want to apply a machine learning method on, consist
+of a set of inputs $\bm{x}^T=[x_0,x_1,x_2,\dots,x_{n-1}]$ and the
+outputs we want to model $\bm{y}^T=[y_0,y_1,y_2,\dots,y_{n-1}]$.
+We assume  that the output data can be represented (for a regression case) by a continuous function $f$
+through
 !bt
 \[
-BE(A) = a_0+a_1A+a_2A^{2/3}+a_3A^{-1/3}+a_4A^{-1},
+y_i=f(x_i)+\epsilon_i,
 \]
 !et
-we have five predictors, that is the intercept, the $A$ dependent term, the $A^{2/3}$ term and the $A^{-1/3}$ and $A^{-1}$ terms.
-This gives $p=0,1,2,3,4$. Furthermore we have $n$ entries for each predictor. It means that our design matrix is a 
-$p\times n$ matrix $\bm{X}$.
-
-Here the predictors are based on a model we have made. A popular data set which is widely encountered in ML applications is the
-so-called "credit card default data from Taiwan":"https://www.sciencedirect.com/science/article/pii/S0957417407006719?via%3Dihub". The data set contains data on $n=30000$ credit card holders with predictors like gender, marital status, age, profession, education, etc. In total there are $24$ such predictors or attributes leading to a design matrix of dimensionality $24 \times 30000$. This is however a classification problem and we will come back to it when we discuss Logistic Regression. 
-
-!eblock
-
-
-
-
-
-!split
-===== General linear models  =====
-!bblock
-Before we proceed let us study a case from linear algebra where we aim at fitting a set of data $\bm{y}=[y_0,y_1,\dots,y_{n-1}]$. We could think of these data as a result of an experiment or a complicated numerical experiment. These data are functions of a series of variables $\bm{x}=[x_0,x_1,\dots,x_{n-1}]$, that is $y_i = y(x_i)$ with $i=0,1,2,\dots,n-1$. The variables $x_i$ could represent physical quantities like time, temperature, position etc. We assume that $y(x)$ is a smooth function. 
-
-Since obtaining these data points may not be trivial, we want to use these data to fit a function which can allow us to make predictions for values of $y$ which are not in the present set. The perhaps simplest approach is to assume we can parametrize our function in terms of a polynomial of degree $n-1$ with $n$ points, that is
+or in general
 !bt
 \[
-y=y(x) \rightarrow y(x_i)=\tilde{y}_i+\epsilon_i=\sum_{j=0}^{n-1} \beta_j x_i^j+\epsilon_i,
+\bm{y}=f(\bm{x})+\bm{\epsilon},
 \]
 !et
-where $\epsilon_i$ is the error in our approximation. 
 
-!eblock
+where $\bm{\epsilon}$ represents some noise which is normally assumed to
+be distributed via a normal probability distribution with zero mean
+value and a variance $\sigma^2$.
 
+In linear regression we approximate the unknown function with another
+continuous function $\tilde{\bm{y}}(\bm{x})$ which depends linearly on
+some unknown parameters
+$\bm{\beta}^T=[\beta_0,\beta_1,\beta_2,\dots,\beta_{p-1}]$.
 
-!split
-===== Rewriting the fitting procedure as a linear algebra problem  =====
-!bblock
-For every set of values $y_i,x_i$ we have thus the corresponding set of equations
-!bt
-\begin{align*}
-y_0&=\beta_0+\beta_1x_0^1+\beta_2x_0^2+\dots+\beta_{n-1}x_0^{n-1}+\epsilon_0\\
-y_1&=\beta_0+\beta_1x_1^1+\beta_2x_1^2+\dots+\beta_{n-1}x_1^{n-1}+\epsilon_1\\
-y_2&=\beta_0+\beta_1x_2^1+\beta_2x_2^2+\dots+\beta_{n-1}x_2^{n-1}+\epsilon_2\\
-\dots & \dots \\
-y_{n-1}&=\beta_0+\beta_1x_{n-1}^1+\beta_2x_{n-1}^2+\dots+\beta_{n-1}x_{n-1}^{n-1}+\epsilon_{n-1}.\\
-\end{align*}
-!et
-!eblock
+Last week we introduced the so-called design matrix in order to define
+the approximation $\bm{\tilde{y}}$ via the unknown quantity
+$\bm{\beta}$ as
 
 
-!split
-===== Rewriting the fitting procedure as a linear algebra problem, more details  =====
-!bblock
-Defining the vectors
-!bt
-\[
-\bm{y} = [y_0,y_1, y_2,\dots, y_{n-1}]^T,
-\]
-!et
-and
-!bt
-\[
-\bm{\beta} = [\beta_0,\beta_1, \beta_2,\dots, \beta_{n-1}]^T,
-\]
-!et
-and
-!bt
-\[
-\bm{\epsilon} = [\epsilon_0,\epsilon_1, \epsilon_2,\dots, \epsilon_{n-1}]^T,
-\]
-!et
-and the design matrix
-!bt
-\[
-\bm{X}=
-\begin{bmatrix} 
-1& x_{0}^1 &x_{0}^2& \dots & \dots &x_{0}^{n-1}\\
-1& x_{1}^1 &x_{1}^2& \dots & \dots &x_{1}^{n-1}\\
-1& x_{2}^1 &x_{2}^2& \dots & \dots &x_{2}^{n-1}\\                      
-\dots& \dots &\dots& \dots & \dots &\dots\\
-1& x_{n-1}^1 &x_{n-1}^2& \dots & \dots &x_{n-1}^{n-1}\\
-\end{bmatrix} 
-\]
-!et
-we can rewrite our equations as
-!bt
-\[
-\bm{y} = \bm{X}\bm{\beta}+\bm{\epsilon}.
-\]
-!et
-The above design matrix is called a "Vandermonde matrix":"https://en.wikipedia.org/wiki/Vandermonde_matrix".
-!eblock
-
-
-!split
-===== Generalizing the fitting procedure as a linear algebra problem  =====
-!bblock
-
-We are obviously not limited to the above polynomial expansions.  We
-could replace the various powers of $x$ with elements of Fourier
-series or instead of $x_i^j$ we could have $\cos{(j x_i)}$ or $\sin{(j
-x_i)}$, or time series or other orthogonal functions.  For every set
-of values $y_i,x_i$ we can then generalize the equations to
-
-!bt
-\begin{align*}
-y_0&=\beta_0x_{00}+\beta_1x_{01}+\beta_2x_{02}+\dots+\beta_{n-1}x_{0n-1}+\epsilon_0\\
-y_1&=\beta_0x_{10}+\beta_1x_{11}+\beta_2x_{12}+\dots+\beta_{n-1}x_{1n-1}+\epsilon_1\\
-y_2&=\beta_0x_{20}+\beta_1x_{21}+\beta_2x_{22}+\dots+\beta_{n-1}x_{2n-1}+\epsilon_2\\
-\dots & \dots \\
-y_{i}&=\beta_0x_{i0}+\beta_1x_{i1}+\beta_2x_{i2}+\dots+\beta_{n-1}x_{in-1}+\epsilon_i\\
-\dots & \dots \\
-y_{n-1}&=\beta_0x_{n-1,0}+\beta_1x_{n-1,2}+\beta_2x_{n-1,2}+\dots+\beta_{n-1}x_{n-1,n-1}+\epsilon_{n-1}.\\
-\end{align*}
-!et
-
-_Note that we have $p=n$ here. The matrix is symmetric. This is generally not the case!_
-!eblock
-
-
-!split
-===== Generalizing the fitting procedure as a linear algebra problem  =====
-!bblock
-We redefine in turn the matrix $\bm{X}$ as
-!bt
-\[
-\bm{X}=
-\begin{bmatrix} 
-x_{00}& x_{01} &x_{02}& \dots & \dots &x_{0,n-1}\\
-x_{10}& x_{11} &x_{12}& \dots & \dots &x_{1,n-1}\\
-x_{20}& x_{21} &x_{22}& \dots & \dots &x_{2,n-1}\\                      
-\dots& \dots &\dots& \dots & \dots &\dots\\
-x_{n-1,0}& x_{n-1,1} &x_{n-1,2}& \dots & \dots &x_{n-1,n-1}\\
-\end{bmatrix} 
-\]
-!et
-and without loss of generality we rewrite again  our equations as
-!bt
-\[
-\bm{y} = \bm{X}\bm{\beta}+\bm{\epsilon}.
-\]
-!et
-The left-hand side of this equation is kwown. Our error vector $\bm{\epsilon}$ and the parameter vector $\bm{\beta}$ are our unknow quantities. How can we obtain the optimal set of $\beta_i$ values? 
-!eblock
-
-
-!split
-===== Optimizing our parameters  =====
-!bblock
-We have defined the matrix $\bm{X}$ via the equations
-!bt
-\begin{align*}
-y_0&=\beta_0x_{00}+\beta_1x_{01}+\beta_2x_{02}+\dots+\beta_{n-1}x_{0n-1}+\epsilon_0\\
-y_1&=\beta_0x_{10}+\beta_1x_{11}+\beta_2x_{12}+\dots+\beta_{n-1}x_{1n-1}+\epsilon_1\\
-y_2&=\beta_0x_{20}+\beta_1x_{21}+\beta_2x_{22}+\dots+\beta_{n-1}x_{2n-1}+\epsilon_1\\
-\dots & \dots \\
-y_{i}&=\beta_0x_{i0}+\beta_1x_{i1}+\beta_2x_{i2}+\dots+\beta_{n-1}x_{in-1}+\epsilon_1\\
-\dots & \dots \\
-y_{n-1}&=\beta_0x_{n-1,0}+\beta_1x_{n-1,2}+\beta_2x_{n-1,2}+\dots+\beta_{n-1}x_{n-1,n-1}+\epsilon_{n-1}.\\
-\end{align*}
-!et
-
-As we noted above, we stayed with a system with the design matrix 
- $\bm{X}\in {\mathbb{R}}^{n\times n}$, that is we have $p=n$. For reasons to come later (algorithmic arguments) we will hereafter define 
-our matrix as $\bm{X}\in {\mathbb{R}}^{n\times p}$, with the predictors refering to the column numbers and the entries $n$ being the row elements.
-
-!eblock
-
-
-!split
-===== Our model for the nuclear binding energies =====
-
-In our "introductory notes":"https://compphysics.github.io/MachineLearning/doc/pub/How2ReadData/html/How2ReadData.html" we looked at the so-called "liquid drop model":"https://en.wikipedia.org/wiki/Semi-empirical_mass_formula". Let us remind ourselves about what we did by looking at the code.
-
-We restate the parts of the code we are most interested in.
-!bc pycod
-# Common imports
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from IPython.display import display
-import os
-
-# Where to save the figures and data files
-PROJECT_ROOT_DIR = "Results"
-FIGURE_ID = "Results/FigureFiles"
-DATA_ID = "DataFiles/"
-
-if not os.path.exists(PROJECT_ROOT_DIR):
-    os.mkdir(PROJECT_ROOT_DIR)
-
-if not os.path.exists(FIGURE_ID):
-    os.makedirs(FIGURE_ID)
-
-if not os.path.exists(DATA_ID):
-    os.makedirs(DATA_ID)
-
-def image_path(fig_id):
-    return os.path.join(FIGURE_ID, fig_id)
-
-def data_path(dat_id):
-    return os.path.join(DATA_ID, dat_id)
-
-def save_fig(fig_id):
-    plt.savefig(image_path(fig_id) + ".png", format='png')
-
-infile = open(data_path("MassEval2016.dat"),'r')
-
-
-# Read the experimental data with Pandas
-Masses = pd.read_fwf(infile, usecols=(2,3,4,6,11),
-              names=('N', 'Z', 'A', 'Element', 'Ebinding'),
-              widths=(1,3,5,5,5,1,3,4,1,13,11,11,9,1,2,11,9,1,3,1,12,11,1),
-              header=39,
-              index_col=False)
-
-# Extrapolated values are indicated by '#' in place of the decimal place, so
-# the Ebinding column won't be numeric. Coerce to float and drop these entries.
-Masses['Ebinding'] = pd.to_numeric(Masses['Ebinding'], errors='coerce')
-Masses = Masses.dropna()
-# Convert from keV to MeV.
-Masses['Ebinding'] /= 1000
-
-# Group the DataFrame by nucleon number, A.
-Masses = Masses.groupby('A')
-# Find the rows of the grouped DataFrame with the maximum binding energy.
-Masses = Masses.apply(lambda t: t[t.Ebinding==t.Ebinding.max()])
-A = Masses['A']
-Z = Masses['Z']
-N = Masses['N']
-Element = Masses['Element']
-Energies = Masses['Ebinding']
-
-# Now we set up the design matrix X
-X = np.zeros((len(A),5))
-X[:,0] = 1
-X[:,1] = A
-X[:,2] = A**(2.0/3.0)
-X[:,3] = A**(-1.0/3.0)
-X[:,4] = A**(-1.0)
-# Then nice printout using pandas
-DesignMatrix = pd.DataFrame(X)
-DesignMatrix.index = A
-DesignMatrix.columns = ['1', 'A', 'A^(2/3)', 'A^(-1/3)', '1/A']
-display(DesignMatrix)
-!ec
-
-With $\bm{\beta}\in {\mathbb{R}}^{p\times 1}$, it means that we will hereafter write our equations for the approximation as
 !bt
 \[
 \bm{\tilde{y}}= \bm{X}\bm{\beta},
 \]
 !et
-throughout these lectures. 
+
+and in order to find the optimal parameters $\beta_i$ we defined a function which
+gives a measure of the spread between the values $y_i$ (which
+represent the output values we want to reproduce) and the parametrized
+values $\tilde{y}_i$, namely the so-called cost/loss function.
 
 
 !split
-===== Optimizing our parameters, more details  =====
-!bblock
-With the above we use the design matrix to define the approximation $\bm{\tilde{y}}$ via the unknown quantity $\bm{\beta}$ as
-!bt
-\[
-\bm{\tilde{y}}= \bm{X}\bm{\beta},
-\]
-!et
-and in order to find the optimal parameters $\beta_i$ instead of solving the above linear algebra problem, we define a function which gives a measure of the spread between the values $y_i$ (which represent hopefully the exact values) and the parameterized values $\tilde{y}_i$, namely
+===== The cost/loss function =====
+
+We used the mean squared error to define the way we measure the quality of our model
 !bt
 \[
 C(\bm{\beta})=\frac{1}{n}\sum_{i=0}^{n-1}\left(y_i-\tilde{y}_i\right)^2=\frac{1}{n}\left\{\left(\bm{y}-\bm{\tilde{y}}\right)^T\left(\bm{y}-\bm{\tilde{y}}\right)\right\},
@@ -377,7 +117,7 @@ or using the matrix $\bm{X}$ and in a more compact matrix-vector notation as
 C(\bm{\beta})=\frac{1}{n}\left\{\left(\bm{y}-\bm{X}\bm{\beta}\right)^T\left(\bm{y}-\bm{X}\bm{\beta}\right)\right\}.
 \]
 !et
-This function is one possible way to define the so-called cost function.
+This function represents one of many possible ways to define the so-called cost function.
 
 
 
@@ -390,12 +130,12 @@ C(\bm{\beta})=\frac{1}{2n}\sum_{i=0}^{n-1}\left(y_i-\tilde{y}_i\right)^2,
 \]
 !et
 since when taking the first derivative with respect to the unknown parameters $\beta$, the factor of $2$ cancels out. 
-!eblock
+
 
 
 !split
 ===== Interpretations and optimizing our parameters  =====
-!bblock
+
 
 The function 
 !bt
@@ -404,7 +144,7 @@ C(\bm{\beta})=\frac{1}{n}\left\{\left(\bm{y}-\bm{X}\bm{\beta}\right)^T\left(\bm{
 \]
 !et
 can be linked to the variance of the quantity $y_i$ if we interpret the latter as the mean value. 
-When linking (see the discussion below) with the maximum likelihood approach below, we will indeed interpret $y_i$ as a mean value
+When linking (see the discussions next week) with the maximum likelihood approach below, we will indeed interpret $y_i$ as a mean value
 !bt
 \[
 y_{i}=\langle y_i \rangle = \beta_0x_{i,0}+\beta_1x_{i,1}+\beta_2x_{i,2}+\dots+\beta_{n-1}x_{i,n-1}+\epsilon_i,
@@ -413,8 +153,8 @@ y_{i}=\langle y_i \rangle = \beta_0x_{i,0}+\beta_1x_{i,1}+\beta_2x_{i,2}+\dots+\
 
 where $\langle y_i \rangle$ is the mean value. Keep in mind also that
 till now we have treated $y_i$ as the exact value. Normally, the
-response (dependent or outcome) variable $y_i$ the outcome of a
-numerical experiment or another type of experiment and is thus only an
+response (dependent or outcome) variable $y_i$ is the outcome of a
+numerical experiment or another type of experiment and could thus be treated itself as an
 approximation to the true value. It is then always accompanied by an
 error estimate, often limited to a statistical error estimate given by
 the standard deviation discussed earlier. In the discussion here we
@@ -439,24 +179,21 @@ which results in
 \frac{\partial C(\bm{\beta})}{\partial \beta_j} = -\frac{2}{n}\left[ \sum_{i=0}^{n-1}x_{ij}\left(y_i-\beta_0x_{i,0}-\beta_1x_{i,1}-\beta_2x_{i,2}-\dots-\beta_{n-1}x_{i,n-1}\right)\right]=0, 
 \]
 !et
-or in a matrix-vector form as
+or in a matrix-vector form as (multiplying away the factor $-2/n$, see derivation below)
 !bt
 \[
-\frac{\partial C(\bm{\beta})}{\partial \bm{\beta}} = 0 = \bm{X}^T\left( \bm{y}-\bm{X}\bm{\beta}\right).  
+\frac{\partial C(\bm{\beta})}{\partial \bm{\beta}^T} = 0 = \bm{X}^T\left( \bm{y}-\bm{X}\bm{\beta}\right).  
 \]
 !et
-
-
-!eblock
 
 
 !split
 ===== Interpretations and optimizing our parameters  =====
 !bblock
-We can rewrite
+We can rewrite, see the derivations below, 
 !bt
 \[
-\frac{\partial C(\bm{\beta})}{\partial \bm{\beta}} = 0 = \bm{X}^T\left( \bm{y}-\bm{X}\bm{\beta}\right),  
+\frac{\partial C(\bm{\beta})}{\partial \bm{\beta}^T} = 0 = \bm{X}^T\left( \bm{y}-\bm{X}\bm{\beta}\right),  
 \]
 !et
 as
@@ -474,14 +211,13 @@ and if the matrix $\bm{X}^T\bm{X}$ is invertible we have the solution
 
 We note also that since our design matrix is defined as $\bm{X}\in
 {\mathbb{R}}^{n\times p}$, the product $\bm{X}^T\bm{X} \in
-{\mathbb{R}}^{p\times p}$.  In the above case we have that $p \ll n$,
-in our case $p=5$ meaning that we end up with inverting a small
+{\mathbb{R}}^{p\times p}$.  In most cases we have that $p \ll n$. In our example case below we have $p=5$ meaning. We end up with inverting a small
 $5\times 5$ matrix. This is a rather common situation, in many cases we end up with low-dimensional
 matrices to invert. The methods discussed here and for many other
 supervised learning algorithms like classification with logistic
 regression or support vector machines, exhibit dimensionalities which
 allow for the usage of direct linear algebra methods such as _LU_ decomposition or _Singular Value Decomposition_ (SVD) for finding the inverse of the matrix
-$\bm{X}^T\bm{X}$. 
+$\bm{X}^T\bm{X}$.  This is discussed on Thursday this week.
 !eblock
 
 !bblock
@@ -491,17 +227,265 @@ _Small question_: Do you think the example we have at hand here (the nuclear bin
 !split
 ===== Some useful matrix and vector expressions =====
 
-The following matrix and vector relation will be useful here and for the rest of the course. Vectors are always written as boldfaced lower case letters and 
-matrices as upper case boldfaced letters. 
+
+The following matrix and vector relation will be useful here and for
+the rest of the course. Vectors are always written as boldfaced lower
+case letters and matrices as upper case boldfaced letters.  In the
+following we will discuss how to calculate derivatives of various
+matrices relevant for machine learning. We will often represent our
+data in terms of matrices and vectors.
+
+Let us introduce first some conventions. We assume that $\bm{y}$ is a
+vector of length $m$, that is it has $m$ elements $y_0,y_1,\dots,
+y_{m-1}$. By convention we start labeling vectors with the zeroth
+element, as are arrays in Python and C++/C, for example. Similarly, we
+have a vector $\bm{x}$ of length $n$, that is
+$\bm{x}^T=[x_0,x_1,\dots, x_{n-1}]$.
+
+We assume also that $\bm{y}$ is a function of $\bm{x}$ through some
+given function $f$
 
 !bt
 \[
-\frac{\partial (\bm{b}^T\bm{a})}{\partial \bm{a}} = \bm{b},
+\bm{y}=f(\bm{x}).
 \]
 !et
+
+!split
+===== The Jacobian =====
+
+We define the partial derivatives of the various components of $\bm{y}$ as functions of $x_i$ in terms of the so-called "Jacobian matrix":"https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant"
+
 !bt
 \[
-\frac{\partial (\bm{a}^T\bm{A}\bm{a})}{\partial \bm{a}} = (\bm{A}+\bm{A}^T)\bm{a},
+\bm{J}=\frac{\partial \bm{y}}{\partial \bm{x}}=\begin{bmatrix} \frac{\partial y_0}{\partial x_0} & \frac{\partial y_0}{\partial x_1} & \frac{\partial y_0}{\partial x_2} & \dots & \dots & \frac{\partial y_0}{\partial x_{n-1}} \\ \frac{\partial y_1}{\partial x_0} & \frac{\partial y_1}{\partial x_1} & \frac{\partial y_1}{\partial x_2} & \dots & \dots & \frac{\partial y_1}{\partial x_{n-1}} \\
+\frac{\partial y_2}{\partial x_0} & \frac{\partial y_2}{\partial x_1} & \frac{\partial y_2}{\partial x_2} & \dots & \dots & \frac{\partial y_2}{\partial x_{n-1}} \\
+\dots & \dots & \dots & \dots & \dots & \dots \\
+\dots & \dots & \dots & \dots & \dots & \dots \\
+\frac{\partial y_{m-1}}{\partial x_0} & \frac{\partial y_{m-1}}{\partial x_1} & \frac{\partial y_{m-1}}{\partial x_2} & \dots & \dots & \frac{\partial y_{m-1}}{\partial x_{n-1}} \end{bmatrix},
+\]
+!et
+
+which is an $m\times n$ matrix. If $\bm{x}$ is a scalar, then the
+Jacobian is only a single-column vector, or an $m\times 1$ matrix. If
+on the other hand $\bm{y}$ is a scalar, the Jacobian becomes a
+$1\times n$ matrix.
+
+
+When this matrix is a square matrix $m=n$, its determinant is often referred to as the Jacobian
+determinant. Both the matrix and (if $m=n$) the determinant are
+often referred to simply as the Jacobian. The Jacobian matrix represents the differential of $\bm{y}$ at every point where the
+vector is differentiable. 
+
+!split
+===== Derivatives, example 1 =====
+
+Let now $\bm{y}=\bm{A}\bm{x}$, where $\bm{A}$ is an $m\times n$ matrix and the matrix does not depend on $\bm{x}$. If we write out the vector $\bm{y}$ compoment by component we have
+
+!bt
+\[
+y_i = \sum_{j=0}^{n-1}a_{ij}x_j,
+\]
+!et
+with $\forall i=0,1,2,\dots,m-1$. The individual matrix elements of $\bm{A}$ are given by the symbol $a_{ij}$.
+It follows that the partial derivatives of $y_i$ with respect to $x_k$ 
+!bt
+\[
+\frac{\partial y_i }{\partial x_k}= a_{ik} \forall i=0,1,2,\dots,m-1.
+\]
+!et
+
+From this we have, using the definition of the Jacobian
+
+!bt
+\[
+\frac{\partial \bm{y} }{\partial \bm{x}}= \bm{A}.
+\]
+!et
+
+!split
+===== Example 2 =====
+
+We define a scalar (our cost/loss functions are in general also scalars,
+just think of the mean squared error) as the result of some matrix vector
+multiplications
+
+!bt
+\[
+\alpha = \bm{y}^T\bm{A}\bm{x},
+\]
+!et
+with $\bm{y}$ a vector of length $m$, $\bm{A}$ an $m\times n$ matrix and $\bm{x}$ a vector of length $n$. We assume also that $\bm{A}$ does not depend on any of the two vectors.
+In order to find the derivative of $\alpha$ with respect to the two vectors, we define an intermediate vector $\bm{z}$. We define first
+$\bm{z}^T=\bm{y}^T\bm{A}$, a vector of length $n$. We have then, using the definition of the Jacobian,
+!bt
+\[
+\alpha = \bm{z}^T\bm{x},
+\]
+!et
+which means that (using our previous example) we have
+!bt
+\[
+\frac{\partial \alpha}{\partial \bm{x}} = \bm{z}=bm{A}^T\bm{y}.
+\]
+!et
+
+Note that the resulting vector elements are the same for $\bm{z}^T$ and $\bm{z}$, the only difference is that one if just the transpose of the other.
+
+Since $\alpha$ is a scalar we have $\alpha =\alpha^T=\bm{x}^T\bm{A}^T\bm{y}$. Defining now $\bm{z}=\bm{x}^T\bm{A}^T$ we find that
+!bt
+\[
+\frac{\partial \alpha}{\partial \bm{y}} = \bm{z}^T=\bm{x}^T\bm{A}^T.
+\]
+!et
+
+
+
+!split
+===== Example 3 =====
+
+We start with a new scalar but where now the vector $\bm{y}$ is
+replaced by a vector $\bm{x}$ and the matrix $\bm{A}$ is a square
+matrix with dimension $n\times n$.
+
+!bt
+\[
+\alpha = \bm{x}^T\bm{A}\bm{x},
+\]
+!et
+with $\bm{x}$ a vector of length $n$.
+
+We write out the specific sums involved in the calculation of $\alpha$
+!bt
+\[
+\alpha = \sum_{i=0}^{n-1}\sum_{j=0}^{n-1}x_i a_{ij}x_j, 
+\]
+!et
+taking the derivative of $\alpha$ with respect to a given component $x_k$ we get the two sums
+!bt
+\[
+\frac{\partial \alpha}{\partial x_k}  = \sum_{i=0}^{n-1}a_{ik}x_i+\sum_{j=0}^{n-1}a_{kj}x_j, 
+\]
+!et
+for $\forall k =0,1,2,\dots,n-1$. We identify these sums as
+!bt
+\[
+\frac{\partial \alpha}{\partial \bm{x}}  = \bm{x}^T\left(\bm{A}^T+\bm{A}\right).
+\]
+!et
+If the matrix $\bm{A}$ is symmetric, that is $\bm{A}=\bm{A}^T$, we have 
+!bt
+\[
+\frac{\partial \alpha}{\partial \bm{x}}  = 2\bm{x}^T\bm{A}.
+\]
+!et
+
+!split
+===== Example 4 =====
+
+We let the scalar $\alpha$ be defined by
+!bt
+\[
+\alpha = \bm{y}^T\bm{x},
+\]
+!et
+
+where both $\bm{y}$ and $\bm{x}$ have the same length $n$, or if we
+wish to think of them as column vectors, they have dimensions $n\times
+1$. We assume that both $\bm{y}$ and $\bm{x}$ depend on a vector
+$\bm{z}$ of the same length. To calculate the derivative of $\alpha$
+with respect to a given component $z_k$ we need first to write out the
+inner product that defines $\alpha$ as
+!bt
+\[
+\alpha  = \sum_{i=0}^{n-1}y_ix_i,
+\]
+!et
+and the partial derivative
+
+!bt
+\[
+\frac{\partial \alpha}{\partial z_k}  = \sum_{i=0}^{n-1}\left(x_i\frac{\partial y_i}{\partial z_k}+y_i\frac{\partial x_i}{\partial z_k}\right),
+\]
+!et
+for $\forall k =0,1,2,\dots,n-1$. We can rewrite the partial derivative in a more compact form as
+!bt
+\[
+\frac{\partial \alpha}{\partial \bm{z}}  = \bm{x}^T\frac{\partial \bm{y}}{\partial \bm{z}}+\bm{y}^T\frac{\partial \bm{x}}{\partial \bm{z}},
+\]
+!et
+and if $\bm{y}=\bm{x}$ we have
+!bt
+\[
+\frac{\partial \alpha}{\partial \bm{z}}  = 2\bm{x}^T\frac{\partial \bm{x}}{\partial \bm{z}}.
+\]
+!et
+
+!split
+===== The mean squared error and its derivative =====
+
+We defined earlier a possible cost function using the mean squared error
+!bt
+\[
+C(\bm{\beta})=\frac{1}{n}\sum_{i=0}^{n-1}\left(y_i-\tilde{y}_i\right)^2=\frac{1}{n}\left\{\left(\bm{y}-\bm{\tilde{y}}\right)^T\left(\bm{y}-\bm{\tilde{y}}\right)\right\},
+\]
+!et
+or using the design/feature matrix $\bm{X}$ we have the more compact matrix-vector
+!bt
+\[
+C(\bm{\beta})=\frac{1}{n}\left\{\left(\bm{y}-\bm{X}\bm{\beta}\right)^T\left(\bm{y}-\bm{X}\bm{\beta}\right)\right\}.
+\]
+!et
+
+We note that the design matrix $\bm{X}$ does not depend on the unknown parameters defined by the vector $\bm{\beta}$.
+We are now interested in minimizing the cost function with respect to the unknown parameters $\bm{\beta}$.
+
+The mean squared error is a scalar and if we use the results from example three above, we can define a new vector
+!bt
+\[
+\bm{w}=\bm{y}-\bm{X}\bm{\beta},
+\]
+!et
+which depends on $\bm{\beta}$. We rewrite the cost function as
+!bt
+\[
+C(\bm{\beta})=\frac{1}{n}\bm{w}^T\bm{w},
+\]
+!et
+with partial derivative
+!bt
+\[
+\frac{\partial C(\bm{\beta})}{\partial \bm{\beta}}=\frac{2}{n}\bm{w}^T\frac{\partial \bm{w}}{\partial \bm{\beta}},
+\]
+!et
+and using that
+!bt
+\[
+\frac{\partial \bm{w}}{\partial \bm{\beta}}=-\bm{X},
+\]
+!et
+where we used the result from example two above. Inserting the last expression we obtain
+!bt
+\[
+\frac{\partial C(\bm{\beta})}{\partial \bm{\beta}}=-\frac{2}{n}\left(\bm{y}-\bm{X}\bm{\beta}\right)^T\bm{X},
+\]
+!et
+or as
+!bt
+\[
+\frac{\partial C(\bm{\beta})}{\partial \bm{\beta}^T}=-\frac{2}{n}\bm{X}^T\left(\bm{y}-\bm{X}\bm{\beta}\right).
+\]
+!et
+
+
+
+!split
+===== Other useful relations =====
+
+We list here some other useful relations we may encounter (recall that vectors are defined by boldfaced low-key letters)
+!bt
+\[
+\frac{\partial (\bm{b}^T\bm{a})}{\partial \bm{a}} = \bm{b},
 \]
 !et
 !bt
@@ -515,22 +499,20 @@ matrices as upper case boldfaced letters.
 \]
 !et
 
-See the jupyter-book (complete lecture notes) for the derivations of these relations.
-
 
 
 !split
 ===== Meet the Hessian Matrix =====
 
-A very important matrix we will meet again and again in Machine
-Learning is the Hessian.  It is given by the second derivative of the
-cost function with respect to the parameter $\beta$. Using the above
+A very important matrix we will meet again and again in machine
+learning is the Hessian.  It is given by the second derivative of the
+cost function with respect to the parameters $\bm{\beta}$. Using the above
 expression for derivatives of vectors and matrices, we find that the
-second derivative of the cost function is,
+second derivative of the mean squared error as cost function is,
 
 !bt
 \[
-\frac{\partial}{\partial \bm{\beta}^T}\frac{\partial C(\bm{\beta})}{\partial \bm{\beta}} =\frac{\partial}{\partial \bm{\beta}}\left[-\frac{2}{n}\bm{X}^T\left( \bm{y}-\bm{X}\bm{\beta}\right)\right]=\frac{2}{n}\bm{X}^T\bm{X}.  
+\frac{\partial}{\partial \bm{\beta}}\frac{\partial C(\bm{\beta})}{\partial \bm{\beta}^T} =\frac{\partial}{\partial \bm{\beta}}\left[-\frac{2}{n}\bm{X}^T\left( \bm{y}-\bm{X}\bm{\beta}\right)\right]=\frac{2}{n}\bm{X}^T\bm{X}.  
 \]
 !et
 
@@ -546,16 +528,17 @@ The Hessian matrix plays an important role and is defined here as
 
 For ordinary least squares, it is inversely proportional (derivation
 next week) with the variance of the optimal parameters
-$\hat{\bm{\beta}}$. Furthermore, we will see later this week that is
-(beside $1/n$) equal to the covariance matrix. It plays also a very
+$\hat{\bm{\beta}}$. Furthermore, we will see later this week that it is
+(aside the factor $1/n$) equal to the covariance matrix. It plays also a very
 important role in optmization algorithms and Principal Component
-Analysis as a way to reduce the dimensionality of a machine learning
+Analysis as a way to reduce the dimensionality of a machine learning/data analysis
 problem.
 
 _Linear algebra question:_  Can we use the Hessian matrix to say something about properties of the cost function (our optmization  problem)? (hint: think about convex or concave problems and how to relate these to a matrix!). 
 
 !split
 ===== Interpretations and optimizing our parameters  =====
+
 !bblock
 The residuals $\bm{\epsilon}$ are in turn given by
 !bt
@@ -575,43 +558,55 @@ we have
 \bm{X}^T\bm{\epsilon}=\bm{X}^T\left( \bm{y}-\bm{X}\bm{\beta}\right)= 0, 
 \]
 !et
-meaning that the solution for $\bm{\beta}$ is the one which minimizes the residuals.  Later we will link this with the maximum likelihood approach.
+meaning that the solution for $\bm{\beta}$ is the one which minimizes the residuals.  
 
 !eblock
 
 
 !split
+===== Example relevant for the exercises  =====
+
+
+In order to understand the relation among the predictors $p$, the set of data $n$ and the target (outcome, output etc) $\bm{y}$,
+we condiser a simple polynomial fit.
+We assume our data can represented by a fourth-order polynomial. For the $i$th component we have 
+!bt
+\[
+\tilde{y}_i = \beta_0+\beta_1x_i+\beta_2x_i^2+\beta_3x_i^3+\beta_4x_i^4.
+\]
+!et
+we have five predictors/features. The first is the intercept $\beta_0$. The other terms are $\beta_i$ with $i=1,2,3,4$. Furthermore we have $n$ entries for each predictor. It means that our design matrix is an 
+$n\times p$ matrix $\bm{X}$.
+
+
+!split
 ===== Own code for Ordinary Least Squares =====
 
-It is rather straightforward to implement the matrix inversion and obtain the parameters $\bm{\beta}$. After having defined the matrix $\bm{X}$ we simply need to 
-write
+It is rather straightforward to implement the matrix inversion and obtain the parameters $\bm{\beta}$. After having defined the matrix $\bm{X}$ and the outputs $\bm{y}$ we have 
 !bc pycod 
 # matrix inversion to find beta
-beta = np.linalg.inv(X.T.dot(X)).dot(X.T).dot(Energies)
+# First we set up the data
+import numpy as np
+x = np.random.rand(100)
+y = 2.0+5*x*x+0.1*np.random.randn(100)
+# and then the design matrix X including the intercept
+#  The design matrix now as function of a fourth-order polynomial
+X = np.zeros((len(x),5))
+X[:,0] = 1.0
+X[:,1] = x
+X[:,2] = x**2
+X[:,3] = x**3
+X[:,4] = x**4
+beta = (np.linalg.inv(X.T @ X) @ X.T ) @ y
 # and then make the prediction
 ytilde = X @ beta
 !ec
 Alternatively, you can use the least squares functionality in _Numpy_ as
 !bc pycod 
-fit = np.linalg.lstsq(X, Energies, rcond =None)[0]
+fit = np.linalg.lstsq(X, y, rcond =None)[0]
 ytildenp = np.dot(fit,X.T)
 !ec
 
-And finally we plot our fit with and compare with data
-!bc pycod
-Masses['Eapprox']  = ytilde
-# Generate a plot comparing the experimental with the fitted values values.
-fig, ax = plt.subplots()
-ax.set_xlabel(r'$A = N + Z$')
-ax.set_ylabel(r'$E_\mathrm{bind}\,/\mathrm{MeV}$')
-ax.plot(Masses['A'], Masses['Ebinding'], alpha=0.7, lw=2,
-            label='Ame2016')
-ax.plot(Masses['A'], Masses['Eapprox'], alpha=0.7, lw=2, c='m',
-            label='Fit')
-ax.legend()
-save_fig("Masses2016OLS")
-plt.show()
-!ec
 
 !split
 ===== Adding error analysis and training set up =====
@@ -624,7 +619,7 @@ def R2(y_data, y_model):
 !ec
 and we would be using it as 
 !bc pycod 
-print(R2(Energies,ytilde))
+print(R2(y,ytilde))
 !ec
 
 We can easily add our _MSE_ score as
@@ -633,13 +628,13 @@ def MSE(y_data,y_model):
     n = np.size(y_model)
     return np.sum((y_data-y_model)**2)/n
 
-print(MSE(Energies,ytilde))
+print(MSE(y,ytilde))
 !ec
 and finally the relative error as
 !bc pycod
 def RelativeError(y_data,y_model):
     return abs((y_data-y_model)/y_data)
-print(RelativeError(Energies, ytilde))
+print(RelativeError(y, ytilde))
 !ec
 
 
@@ -663,7 +658,7 @@ but now splitting the data into a training set and a test set.
 
 
 !split
-===== Examples =====
+===== The complete code with a simple data set =====
 
 !bc pycod
 import os
@@ -683,11 +678,13 @@ x = np.random.rand(100)
 y = 2.0+5*x*x+0.1*np.random.randn(100)
 
 
-#  The design matrix now as function of a given polynomial
-X = np.zeros((len(x),3))
+#  The design matrix now as function of a fourth-order polynomial
+X = np.zeros((len(x),5))
 X[:,0] = 1.0
 X[:,1] = x
 X[:,2] = x**2
+X[:,3] = x**3
+X[:,4] = x**4
 # We split the data in test and training data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 # matrix inversion to find beta
@@ -732,159 +729,6 @@ But since _scikit-learn_ has its own function for doing this and since
 it interfaces easily with _tensorflow_ and other libraries, we
 normally recommend using the latter functionality.
 
-
-!split 
-===== The Boston housing data example =====
-
-The Boston housing  
-data set was originally a part of UCI Machine Learning Repository
-and has been removed now. The data set is now included in _Scikit-Learn_'s 
-library.  There are 506 samples and 13 feature (predictor) variables
-in this data set. The objective is to predict the value of prices of
-the house using the features (predictors) listed here.
-
-The features/predictors are
- o CRIM: Per capita crime rate by town
- o ZN: Proportion of residential land zoned for lots over 25000 square feet
- o INDUS: Proportion of non-retail business acres per town
- o CHAS: Charles River dummy variable (= 1 if tract bounds river; 0 otherwise)
- o NOX: Nitric oxide concentration (parts per 10 million)
- o RM: Average number of rooms per dwelling
- o AGE: Proportion of owner-occupied units built prior to 1940
- o DIS: Weighted distances to five Boston employment centers
- o RAD: Index of accessibility to radial highways
- o TAX: Full-value property tax rate per USD10000
- o B: $1000(Bk - 0.63)^2$, where $Bk$ is the proportion of [people of African American descent] by town
- o LSTAT: Percentage of lower status of the population
- o MEDV: Median value of owner-occupied homes in USD 1000s
-
-!split
-===== Housing data, the code =====
-We start by importing the libraries
-!bc pycod
-import numpy as np
-import matplotlib.pyplot as plt 
-
-import pandas as pd  
-import seaborn as sns 
-!ec
-and load the Boston Housing DataSet from _Scikit-Learn_
-
-
-!bc pycod
-from sklearn.datasets import load_boston
-
-boston_dataset = load_boston()
-
-# boston_dataset is a dictionary
-# let's check what it contains
-boston_dataset.keys()
-!ec
-Then we invoke Pandas
-!bc pycod
-boston = pd.DataFrame(boston_dataset.data, columns=boston_dataset.feature_names)
-boston.head()
-boston['MEDV'] = boston_dataset.target
-!ec
-and preprocess the data
-!bc pycod
-# check for missing values in all the columns
-boston.isnull().sum()
-!ec
-We can then visualize the data
-!bc pycod
-# set the size of the figure
-sns.set(rc={'figure.figsize':(11.7,8.27)})
-
-# plot a histogram showing the distribution of the target values
-sns.distplot(boston['MEDV'], bins=30)
-plt.show()
-!ec
-
-It is now useful to look at the correlation matrix
-!bc pycod
-# compute the pair wise correlation for all columns  
-correlation_matrix = boston.corr().round(2)
-# use the heatmap function from seaborn to plot the correlation matrix
-# annot = True to print the values inside the square
-sns.heatmap(data=correlation_matrix, annot=True)
-!ec
-From the above coorelation plot we can see that _MEDV_ is strongly correlated to _LSTAT_ and  _RM_. We see also that _RAD_ and _TAX_ are stronly correlated, but we don't include this in our features together to avoid multi-colinearity
-
-!bc pycod
-plt.figure(figsize=(20, 5))
-
-features = ['LSTAT', 'RM']
-target = boston['MEDV']
-
-for i, col in enumerate(features):
-    plt.subplot(1, len(features) , i+1)
-    x = boston[col]
-    y = target
-    plt.scatter(x, y, marker='o')
-    plt.title(col)
-    plt.xlabel(col)
-    plt.ylabel('MEDV')
-!ec
-Now we start training our model
-!bc pycod
-X = pd.DataFrame(np.c_[boston['LSTAT'], boston['RM']], columns = ['LSTAT','RM'])
-Y = boston['MEDV']
-!ec
-We split the data into training and test sets
-
-!bc pycod
-from sklearn.model_selection import train_test_split
-
-# splits the training and test data set in 80% : 20%
-# assign random_state to any value.This ensures consistency.
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.2, random_state=5)
-print(X_train.shape)
-print(X_test.shape)
-print(Y_train.shape)
-print(Y_test.shape)
-!ec
-Then we use the linear regression functionality from _Scikit-Learn_
-!bc pycod
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
-
-lin_model = LinearRegression()
-lin_model.fit(X_train, Y_train)
-
-# model evaluation for training set
-
-y_train_predict = lin_model.predict(X_train)
-rmse = (np.sqrt(mean_squared_error(Y_train, y_train_predict)))
-r2 = r2_score(Y_train, y_train_predict)
-
-print("The model performance for training set")
-print("--------------------------------------")
-print('RMSE is {}'.format(rmse))
-print('R2 score is {}'.format(r2))
-print("\n")
-
-# model evaluation for testing set
-
-y_test_predict = lin_model.predict(X_test)
-# root mean square error of the model
-rmse = (np.sqrt(mean_squared_error(Y_test, y_test_predict)))
-
-# r-squared score of the model
-r2 = r2_score(Y_test, y_test_predict)
-
-print("The model performance for testing set")
-print("--------------------------------------")
-print('RMSE is {}'.format(rmse))
-print('R2 score is {}'.format(r2))
-!ec
-
-!bc pycod
-# plotting the y_test vs y_pred
-# ideally should have been a straight line
-plt.scatter(Y_test, y_test_predict)
-plt.show()
-!ec
 
 
 !split
@@ -1045,10 +889,9 @@ where $\min(x_j)$ and $\max(x_j)$ return the minimum and maximum value of $x_j$ 
 
 !split
 ===== Testing the Means Squared Error as function of Complexity =====
+
 One of 
 the aims is to reproduce Figure 2.11 of "Hastie et al":"https://github.com/CompPhysics/MLErasmus/blob/master/doc/Textbooks/elementsstat.pdf".
-We will also use Ridge and Lasso regression. 
-
 
 Our data is defined by $x\in [-3,3]$ with a total of for example $100$ data points.
 !bc pycod
@@ -1061,11 +904,11 @@ y = np.exp(-x**2) + 1.5 * np.exp(-(x-2)**2)+ np.random.normal(0, 0.1, x.shape)
 !ec
 where $y$ is the function we want to fit with a given polynomial.
 
-Write a first code which sets up a design matrix $X$ defined by a fifth-order polynomial.  Scale your data and split it in training and test data. 
+Write a first code which sets up a design matrix $X$ defined by a fourth-order polynomial.  Scale your data and split it in training and test data. 
 !bc pycod
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
@@ -1104,7 +947,7 @@ plt.show()
 
 
 !split
-===== More preprocessing examples, Franke function and regression =====
+===== More preprocessing examples, two-dimensional example, the Franke function =====
 
 !bc pycod
 # Common imports
@@ -1201,6 +1044,499 @@ print("MSE after  scaling: {:.2f}".format(mean_squared_error(clf.predict(X_test_
 print("R2 score for  scaled data: {:.2f}".format(clf.score(X_test_scaled,y_test)))
 
 !ec
+
+
+
+
+!split
+===== To think about, first part =====
+
+When you are comparing your own code with for example _Scikit-Learn_'s
+library, there are some technicalities to keep in mind.  The examples
+here demonstrate some of these aspects with potential pitfalls.
+
+The discussion here focuses on the role of the intercept, how we can
+set up the design matrix, what scaling we should use and other topics
+which tend  confuse us.
+
+
+
+The intercept can be interpreted as the expected value of our
+target/output variables when all other predictors are set to zero.
+Thus, if we cannot assume that the expected outputs/targets are zero
+when all predictors are zero (the columns in the design matrix), it
+may be a bad idea to implement a model which penalizes the intercept.
+Furthermore, in for example Ridge and Lasso regression (to be discussed in moe detail next week), the default solutions
+from the library _Scikit-Learn_ (when not shrinking $\beta_0$) for the unknown parameters
+$\bm{\beta}$, are derived under the assumption that both $\bm{y}$ and
+$\bm{X}$ are zero centered, that is we subtract the mean values.
+
+
+!split
+=====  More thinking =====
+
+
+If our predictors represent different scales, then it is important to
+standardize the design matrix $\bm{X}$ by subtracting the mean of each
+column from the corresponding column and dividing the column with its
+standard deviation. Most machine learning libraries do this as a default. This means that if you compare your code with the results from a given library,
+the results may differ. 
+
+The
+"Standadscaler":"https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html"
+function in _Scikit-Learn_ does this for us.  For the data sets we
+have been studying in our various examples, the data are in many cases
+already scaled and there is no need to scale them. You as a user of different machine learning algorithms, should always perform  a
+survey of your data, with a critical assessment of them in case you need to scale the data.
+
+If you need to scale the data, not doing so will give an *unfair*
+penalization of the parameters since their magnitude depends on the
+scale of their corresponding predictor.
+
+Suppose as an example that you 
+you have an input variable given by the heights of different persons.
+Human height might be measured in inches or meters or
+kilometers. If measured in kilometers, a standard linear regression
+model with this predictor would probably give a much bigger
+coefficient term, than if measured in millimeters.
+This can clearly lead to problems in evaluating the cost/loss functions.
+
+
+!split
+===== Still thinking =====
+
+Keep in mind that when you transform your data set before training a model, the same transformation needs to be done
+on your eventual new data set  before making a prediction. If we translate this into a Python code, it would could be implemented as follows
+(note that the lines are commented since the model function has not been defined)
+!bc pycod
+#Model training, we compute the mean value of y and X
+y_train_mean = np.mean(y_train)
+X_train_mean = np.mean(X_train,axis=0)
+X_train = X_train - X_train_mean
+y_train = y_train - y_train_mean
+
+# The we fit our model with the training data
+#trained_model = some_model.fit(X_train,y_train)
+
+
+#Model prediction, we need also to transform our data set used for the prediction.
+X_test = X_test - X_train_mean #Use mean from training data
+#y_pred = trained_model(X_test)
+y_pred = y_pred + y_train_mean
+!ec
+
+
+!split
+===== What does centering (subtracting the mean values) mean mathematically? =====
+
+
+Let us try to understand what this may imply mathematically when we
+subtract the mean values, also known as *zero centering*. For
+simplicity, we will focus on  ordinary regression, as done in the above example.
+
+The cost/loss function  for regression is
+!bt
+\[
+C(\beta_0, \beta_1, ... , \beta_{p-1}) = \frac{1}{n}\sum_{i=0}^{n} \left(y_i - \beta_0 - \sum_{j=1}^{p-1} X_{ij}\beta_j\right)^2,.
+\]
+!et
+Recall also that we use the squared value since this leads to an increase of the penalty for higher differences between predicted and output/target values.
+
+What we have done is to single out the $\beta_0$ term in the definition of the mean squared error (MSE).
+The design matrix
+$X$ does in this case not contain any intercept column.
+When we take the derivative with respect to $\beta_0$, we want the derivative to obey
+!bt
+\[
+\frac{\partial C}{\partial \beta_j} = 0,
+\]
+!et
+
+for all $j$. For $\beta_0$ we have
+
+!bt
+\[
+\frac{\partial C}{\partial \beta_0} = -\frac{2}{n}\sum_{i=0}^{n-1} \left(y_i - \beta_0 - \sum_{j=1}^{p-1} X_{ij} \beta_j\right).
+\]
+!et
+Multiplying away the constant $2/n$, we obtain
+!bt
+\[
+\sum_{i=0}^{n-1} \beta_0 = \sum_{i=0}^{n-1}y_i - \sum_{i=0}^{n-1} \sum_{j=1}^{p-1} X_{ij} \beta_j.
+\]
+!et
+
+!split
+===== Further Manipulations =====
+
+
+Let us special first to the case where we have only two parameters $\beta_0$ and $\beta_1$.
+Our result for $\beta_0$ simplifies then to
+!bt
+\[
+n\beta_0 = \sum_{i=0}^{n-1}y_i - \sum_{i=0}^{n-1} X_{i1} \beta_1.
+\]
+!et
+We obtain then
+!bt
+\[
+\beta_0 = \frac{1}{n}\sum_{i=0}^{n-1}y_i - \beta_1\frac{1}{n}\sum_{i=0}^{n-1} X_{i1}.
+\]
+!et
+If we define
+!bt
+\[
+\mu_1=\frac{1}{n}\sum_{i=0}^{n-1} (X_{i1},
+\]
+!et
+and if we define the mean value of the outputs as
+!bt
+\[
+\mu_y=\frac{1}{n}\sum_{i=0}^{n-1}y_i,
+\]
+!et
+we have
+!bt
+\[
+\beta_0 = \mu_y - \beta_1\mu_{1}.
+\]
+!et
+In the general case, that is we have more parameters than $\beta_0$ and $\beta_1$, we have
+!bt
+\[
+\beta_0 = \frac{1}{n}\sum_{i=0}^{n-1}y_i - \frac{1}{n}\sum_{i=0}^{n-1}\sum_{j=1}^{p-1} X_{ij}\beta_j.
+\]
+!et
+
+
+
+Replacing $y_i$ with $y_i - y_i - \overline{\bm{y}}$ and centering also our design matrix results in a cost function (in vector-matrix disguise)
+!bt
+\[
+C(\boldsymbol{\beta}) = (\boldsymbol{\tilde{y}} - \tilde{X}\boldsymbol{\beta})^T(\boldsymbol{\tilde{y}} - \tilde{X}\boldsymbol{\beta}). 
+\]
+!et
+
+!split
+===== Wrapping it up =====
+
+If we minimize with respect to $\bm{\beta}$ we have then
+
+!bt
+\[
+\hat{\bm{\beta}} = (\tilde{X}^T\tilde{X})^{-1}\tilde{X}^T\boldsymbol{\tilde{y}},
+\]
+!et
+
+where $\boldsymbol{\tilde{y}} = \boldsymbol{y} - \overline{\bm{y}}$
+and $\tilde{X}_{ij} = X_{ij} - \frac{1}{n}\sum_{k=0}^{n-1}X_{kj}$.
+
+For Ridge regression we need to add $\lambda \boldsymbol{\beta}^T\boldsymbol{\beta}$ to the cost function and get then
+!bt
+\[
+\hat{\bm{\beta}} = (\tilde{X}^T\tilde{X} + \lambda I)^{-1}\tilde{X}^T\boldsymbol{\tilde{y}}.
+\]
+!et
+
+What does this mean? And why do we insist on all this? Let us look at some examples.
+
+
+
+!split
+=====  Linear Regression code, Intercept handling first =====
+
+This code shows a simple first-order fit to a data set using the above transformed data, where we consider the role of the intercept first, by either excluding it or including it (*code example thanks to  Øyvind Sigmundson Schøyen*). Here our scaling of the data is done by subtracting the mean values only.
+Note also that we do not split the data into training and test.
+
+!bc pycod
+import numpy as np
+import matplotlib.pyplot as plt
+
+from sklearn.linear_model import LinearRegression
+
+
+np.random.seed(2021)
+
+def MSE(y_data,y_model):
+    n = np.size(y_model)
+    return np.sum((y_data-y_model)**2)/n
+
+
+def fit_beta(X, y):
+    return np.linalg.pinv(X.T @ X) @ X.T @ y
+
+
+true_beta = [2, 0.5, 3.7]
+
+x = np.linspace(0, 1, 11)
+y = np.sum(
+    np.asarray([x ** p * b for p, b in enumerate(true_beta)]), axis=0
+) + 0.1 * np.random.normal(size=len(x))
+
+degree = 3
+X = np.zeros((len(x), degree))
+
+# Include the intercept in the design matrix
+for p in range(degree):
+    X[:, p] = x ** p
+
+beta = fit_beta(X, y)
+
+# Intercept is included in the design matrix
+skl = LinearRegression(fit_intercept=False).fit(X, y)
+
+print(f"True beta: {true_beta}")
+print(f"Fitted beta: {beta}")
+print(f"Sklearn fitted beta: {skl.coef_}")
+ypredictOwn = X @ beta
+ypredictSKL = skl.predict(X)
+print(f"MSE with intercept column")
+print(MSE(y,ypredictOwn))
+print(f"MSE with intercept column from SKL")
+print(MSE(y,ypredictSKL))
+
+
+plt.figure()
+plt.scatter(x, y, label="Data")
+plt.plot(x, X @ beta, label="Fit")
+plt.plot(x, skl.predict(X), label="Sklearn (fit_intercept=False)")
+
+
+# Do not include the intercept in the design matrix
+X = np.zeros((len(x), degree - 1))
+
+for p in range(degree - 1):
+    X[:, p] = x ** (p + 1)
+
+# Intercept is not included in the design matrix
+skl = LinearRegression(fit_intercept=True).fit(X, y)
+
+# Use centered values for X and y when computing coefficients
+y_offset = np.average(y, axis=0)
+X_offset = np.average(X, axis=0)
+
+beta = fit_beta(X - X_offset, y - y_offset)
+intercept = np.mean(y_offset - X_offset @ beta)
+
+print(f"Manual intercept: {intercept}")
+print(f"Fitted beta (wiothout intercept): {beta}")
+print(f"Sklearn intercept: {skl.intercept_}")
+print(f"Sklearn fitted beta (without intercept): {skl.coef_}")
+ypredictOwn = X @ beta
+ypredictSKL = skl.predict(X)
+print(f"MSE with Manual intercept")
+print(MSE(y,ypredictOwn+intercept))
+print(f"MSE with Sklearn intercept")
+print(MSE(y,ypredictSKL))
+
+plt.plot(x, X @ beta + intercept, "--", label="Fit (manual intercept)")
+plt.plot(x, skl.predict(X), "--", label="Sklearn (fit_intercept=True)")
+plt.grid()
+plt.legend()
+
+plt.show()
+
+!ec
+
+The intercept is the value of our output/target variable
+when all our features are zero and our function crosses the $y$-axis (for a one-dimensional case). 
+
+Printing the MSE, we see first that both methods give the same MSE, as
+they should.  However, when we move to for example Ridge regression (discussed next week),
+the way we treat the intercept may give a larger or smaller MSE,
+meaning that the MSE can be penalized by the value of the
+intercept. Not including the intercept in the fit, means that the
+regularization term does not include $\beta_0$. For different values
+of $\lambda$, this may lead to differing MSE values. 
+
+To remind the reader, the regularization term, with the intercept in Ridge regression is given by
+!bt
+\[
+\lambda \vert\vert \bm{\beta} \vert\vert_2^2 = \lambda \sum_{j=0}^{p-1}\beta_j^2,
+\]
+!et
+but when we take out the intercept, this equation becomes
+!bt
+\[
+\lambda \vert\vert \bm{\beta} \vert\vert_2^2 = \lambda \sum_{j=1}^{p-1}\beta_j^2.
+\]
+!et
+
+For Lasso regression we have
+!bt
+\[
+\lambda \vert\vert \bm{\beta} \vert\vert_1 = \lambda \sum_{j=1}^{p-1}\vert\beta_j\vert.
+\]
+!et
+
+It means that, when scaling the design matrix and the outputs/targets,
+by subtracting the mean values, we have an optimization problem which
+is not penalized by the intercept. The MSE value can then be smaller
+since it focuses only on the remaining quantities. If we however bring
+back the intercept, we will get an MSE which then contains the
+intercept. This becomes more important when we discuss Ridge and Lasso
+regression next week.
+
+
+
+!split 
+===== The Boston housing data example =====
+
+The Boston housing  
+data set was originally a part of UCI Machine Learning Repository
+and has been removed now. The data set is now included in _Scikit-Learn_'s 
+library.  There are 506 samples and 13 feature (predictor) variables
+in this data set. The objective is to predict the value of prices of
+the house using the features (predictors) listed here.
+
+The features/predictors are
+ o CRIM: Per capita crime rate by town
+ o ZN: Proportion of residential land zoned for lots over 25000 square feet
+ o INDUS: Proportion of non-retail business acres per town
+ o CHAS: Charles River dummy variable (= 1 if tract bounds river; 0 otherwise)
+ o NOX: Nitric oxide concentration (parts per 10 million)
+ o RM: Average number of rooms per dwelling
+ o AGE: Proportion of owner-occupied units built prior to 1940
+ o DIS: Weighted distances to five Boston employment centers
+ o RAD: Index of accessibility to radial highways
+ o TAX: Full-value property tax rate per USD10000
+ o B: $1000(Bk - 0.63)^2$, where $Bk$ is the proportion of [people of African American descent] by town
+ o LSTAT: Percentage of lower status of the population
+ o MEDV: Median value of owner-occupied homes in USD 1000s
+
+!split
+===== Housing data, the code =====
+We start by importing the libraries
+!bc pycod
+import numpy as np
+import matplotlib.pyplot as plt 
+
+import pandas as pd  
+import seaborn as sns 
+!ec
+and load the Boston Housing DataSet from _Scikit-Learn_
+
+
+!bc pycod
+from sklearn.datasets import load_boston
+
+boston_dataset = load_boston()
+
+# boston_dataset is a dictionary
+# let's check what it contains
+boston_dataset.keys()
+!ec
+Then we invoke Pandas
+!bc pycod
+boston = pd.DataFrame(boston_dataset.data, columns=boston_dataset.feature_names)
+boston.head()
+boston['MEDV'] = boston_dataset.target
+!ec
+and preprocess the data
+!bc pycod
+# check for missing values in all the columns
+boston.isnull().sum()
+!ec
+We can then visualize the data
+!bc pycod
+# set the size of the figure
+sns.set(rc={'figure.figsize':(11.7,8.27)})
+
+# plot a histogram showing the distribution of the target values
+sns.distplot(boston['MEDV'], bins=30)
+plt.show()
+!ec
+
+It is now useful to look at the correlation matrix
+!bc pycod
+# compute the pair wise correlation for all columns  
+correlation_matrix = boston.corr().round(2)
+# use the heatmap function from seaborn to plot the correlation matrix
+# annot = True to print the values inside the square
+sns.heatmap(data=correlation_matrix, annot=True)
+!ec
+From the above coorelation plot we can see that _MEDV_ is strongly correlated to _LSTAT_ and  _RM_. We see also that _RAD_ and _TAX_ are stronly correlated, but we don't include this in our features together to avoid multi-colinearity
+
+!bc pycod
+plt.figure(figsize=(20, 5))
+
+features = ['LSTAT', 'RM']
+target = boston['MEDV']
+
+for i, col in enumerate(features):
+    plt.subplot(1, len(features) , i+1)
+    x = boston[col]
+    y = target
+    plt.scatter(x, y, marker='o')
+    plt.title(col)
+    plt.xlabel(col)
+    plt.ylabel('MEDV')
+!ec
+Now we start training our model
+!bc pycod
+X = pd.DataFrame(np.c_[boston['LSTAT'], boston['RM']], columns = ['LSTAT','RM'])
+Y = boston['MEDV']
+!ec
+We split the data into training and test sets
+
+!bc pycod
+from sklearn.model_selection import train_test_split
+
+# splits the training and test data set in 80% : 20%
+# assign random_state to any value.This ensures consistency.
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.2, random_state=5)
+print(X_train.shape)
+print(X_test.shape)
+print(Y_train.shape)
+print(Y_test.shape)
+!ec
+Then we use the linear regression functionality from _Scikit-Learn_
+!bc pycod
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+
+lin_model = LinearRegression()
+lin_model.fit(X_train, Y_train)
+
+# model evaluation for training set
+
+y_train_predict = lin_model.predict(X_train)
+rmse = (np.sqrt(mean_squared_error(Y_train, y_train_predict)))
+r2 = r2_score(Y_train, y_train_predict)
+
+print("The model performance for training set")
+print("--------------------------------------")
+print('RMSE is {}'.format(rmse))
+print('R2 score is {}'.format(r2))
+print("\n")
+
+# model evaluation for testing set
+
+y_test_predict = lin_model.predict(X_test)
+# root mean square error of the model
+rmse = (np.sqrt(mean_squared_error(Y_test, y_test_predict)))
+
+# r-squared score of the model
+r2 = r2_score(Y_test, y_test_predict)
+
+print("The model performance for testing set")
+print("--------------------------------------")
+print('RMSE is {}'.format(rmse))
+print('R2 score is {}'.format(r2))
+!ec
+
+!bc pycod
+# plotting the y_test vs y_pred
+# ideally should have been a straight line
+plt.scatter(Y_test, y_test_predict)
+plt.show()
+!ec
+
+
+
+
+!split
+===== Material for lecture Thursday, August 31 =====
 
 
 !split
@@ -1714,7 +2050,7 @@ and using our SVD decomposition of $\bm{X}$ we have
 \tilde{y}_{\mathrm{OLS}}=\bm{U}\bm{\Sigma}\bm{V}^T\left(\bm{V}\tilde{\bm{\Sigma}}^{2}(\bm{V}^T\right)^{-1}\bm{V}\bm{\Sigma}^T\bm{U}^T\bm{y},
 \]
 !et
-which gives us, using the orthogonality of the matrices $\bm{U}$ and $\bm{V}$,
+which gives us, using the orthogonality of the matrix $\bm{V}$,
 
 !bt
 \[
@@ -1725,8 +2061,10 @@ which gives us, using the orthogonality of the matrices $\bm{U}$ and $\bm{V}$,
 It means that the ordinary least square model (with the optimal
 parameters) $\bm{\tilde{y}}$, corresponds to an orthogonal
 transformation of the output (or target) vector $\bm{y}$ by the
-vectors of the matrix $\bm{U}$. Note that the summation ends at $p-1$,
-that is $\bm{\tilde{y}}\ne \bm{y}$.
+vectors of the matrix $\bm{U}$. _Note that the summation ends at_
+$p-1$, that is $\bm{\tilde{y}}\ne \bm{y}$. We can thus not use the
+orthogonality relation for the matrix $\bm{U}$. This can already be
+when we multiply the matrices $\bm{\Sigma}^T\bm{U}^T$.
 
 !split
 ===== Further properties (important for our analyses later) =====
@@ -1796,7 +2134,7 @@ function, that is we have
 
 !bt
 \[
-\frac{\partial^2 C(\bm{\beta})}{\partial \bm{\beta}^T\partial \bm{\beta}} =\frac{2}{n}\bm{X}^T\bm{X}.  
+\frac{\partial^2 C(\bm{\beta})}{\partial \bm{\beta}\partial \bm{\beta}^T} =\frac{2}{n}\bm{X}^T\bm{X}.  
 \]
 !et
 This quantity defines was what is called the Hessian matrix (the second derivative of a function we want to optimize).
@@ -1858,7 +2196,7 @@ with a factor $1/(n-1)$. This is called "Bessel's correction":"https://mathworld
 method corrects the bias in the estimation of the population variance
 and covariance. It also partially corrects the bias in the estimation
 of the population standard deviation. If you use a library like
-_Scikit-Learn_ or _nunmpy's_ function calculate the covariance, this
+_Scikit-Learn_ or _nunmpy's_ function to calculate the covariance, this
 quantity will be computed with a factor $1/(n-1)$.
 
 !split
@@ -2223,7 +2561,7 @@ encode from the columns of $\bm{X}$.
 
 
 Note that these are also the eigenvectors and eigenvalues of the
-Hessian matrix.
+Hessian matrix. Note also that the Hessian matrix we are discussing here is from a cost function defined by the  mean squared error only.
 
 If we now recall the definition of the covariance matrix (not using
 Bessel's correction) we have
@@ -2477,464 +2815,43 @@ Similarly, "Mehta et al's article":"https://arxiv.org/abs/1803.08823" is also re
 !split
 ===== Deriving the  Lasso Regression Equations =====
 
-Using the matrix-vector expression for Lasso regression and dropping the parameter $1/n$ in front of the standard means squared error equation, we have the following _cost_ function
+Using the matrix-vector expression for Lasso regression, we have the following _cost_ function
 
 !bt
 \[
-C(\bm{X},\bm{\beta})=\left\{(\bm{y}-\bm{X}\bm{\beta})^T(\bm{y}-\bm{X}\bm{\beta})\right\}+\lambda\vert\vert\bm{\beta}\vert\vert_1,
+C(\bm{X},\bm{\beta})=\frac{1}{n}\left\{(\bm{y}-\bm{X}\bm{\beta})^T(\bm{y}-\bm{X}\bm{\beta})\right\}+\lambda\vert\vert\bm{\beta}\vert\vert_1,
 \]
 !et
 
 Taking the derivative with respect to $\bm{\beta}$ and recalling that the derivative of the absolute value is (we drop the boldfaced vector symbol for simplicty)
 !bt
 \[
-\frac{d \vert \beta\vert}{d \bm{\beta}}=\mathrm{sgn}(\bm{\beta})=\left\{\begin{array}{cc} 1 & \beta > 0 \\-1 & \beta < 0, \end{array}\right.
+\frac{d \vert \beta\vert}{d \beta}=\mathrm{sgn}(\beta)=\left\{\begin{array}{cc} 1 & \beta > 0 \\-1 & \beta < 0, \end{array}\right.
 \]
 !et
 we have that the derivative of the cost function is
 
 !bt
 \[
-\frac{\partial C(\bm{X},\bm{\beta})}{\partial \bm{\beta}}=-2\bm{X}^T(\bm{y}-\bm{X}\bm{\beta})+\lambda sgn(\bm{\beta})=0,
+\frac{\partial C(\bm{X},\bm{\beta})}{\partial \bm{\beta}}=-\frac{2}{n}\bm{X}^T(\bm{y}-\bm{X}\bm{\beta})+\lambda sgn(\bm{\beta})=0,
 \]
 !et
 and reordering we have
 !bt
 \[
+\bm{X}^T\bm{X}\bm{\beta}+\frac{n}{2}\lambda sgn(\bm{\beta})=2\bm{X}^T\bm{y}.
+\]
+!et
+We can redefine $\lambda$ to absorb the constant $n/2$ and we rewrite the last equation as
+!bt
+\[
 \bm{X}^T\bm{X}\bm{\beta}+\lambda sgn(\bm{\beta})=2\bm{X}^T\bm{y}.
 \]
 !et
+
+
 This equation does not lead to a nice analytical equation as in either Ridge regression or ordinary least squares. This equation can however be solved by using standard convex optimization algorithms using for example the Python package "CVXOPT":"https://cvxopt.org/". We will discuss this later. 
 
-!split
-===== Exercises for week 35 =====
 
-The exercises here are meant to prepare you for work with project 1. The first exercise is a follow-up of exercise 2 from week 35 August 30-September 3).
-
-===== Exercise: Setting up various Python environments  =====
-
-The first exercise here is of a mere technical art. We want you to have 
-* git as a version control software and to establish a user account on a provider like GitHub. Other providers like GitLab etc are equally fine. You can also use the University of Oslo "GitHub facilities":"https://www.uio.no/tjenester/it/maskin/filer/versjonskontroll/github.html". 
-* Install various Python packages
-
-We will make extensive use of Python as programming language and its
-myriad of available libraries.  You will find
-IPython/Jupyter notebooks invaluable in your work.  You can run _R_
-codes in the Jupyter/IPython notebooks, with the immediate benefit of
-visualizing your data. You can also use compiled languages like C++,
-Rust, Fortran etc if you prefer. The focus in these lectures will be
-on Python.
-
-If you have Python installed (we recommend Python3) and you feel
-pretty familiar with installing different packages, we recommend that
-you install the following Python packages via _pip_ as 
-
-o pip install numpy scipy matplotlib ipython scikit-learn sympy pandas pillow 
-
-For _Tensorflow_, we recommend following the instructions in the text of 
-"Aurelien Geron, Hands‑On Machine Learning with Scikit‑Learn and TensorFlow, O'Reilly":"http://shop.oreilly.com/product/0636920052289.do"
-
-We will come back to _tensorflow_ later. 
-
-For Python3, replace _pip_ with _pip3_.
-
-For OSX users we recommend, after having installed Xcode, to
-install _brew_. Brew allows for a seamless installation of additional
-software via for example 
-
-o brew install python3
-
-For Linux users, with its variety of distributions like for example the widely popular Ubuntu distribution,
-you can use _pip_ as well and simply install Python as 
-
-o sudo apt-get install python3  (or python for Python2.7)
-
-If you don't want to perform these operations separately and venture
-into the hassle of exploring how to set up dependencies and paths, we
-recommend two widely used distrubutions which set up all relevant
-dependencies for Python, namely 
-
-* "Anaconda":"https://docs.anaconda.com/", 
-
-which is an open source
-distribution of the Python and R programming languages for large-scale
-data processing, predictive analytics, and scientific computing, that
-aims to simplify package management and deployment. Package versions
-are managed by the package management system _conda_. 
-
-* "Enthought canopy":"https://www.enthought.com/product/canopy/" 
-
-is a Python
-distribution for scientific and analytic computing distribution and
-analysis environment, available for free and under a commercial
-license.
-
-We recommend using _Anaconda_ if you are not too familiar with setting paths in a terminal environment.
-
-
-
-
-===== Exercise: making your own data and exploring scikit-learn =====
-
-
-We will generate our own dataset for a function $y(x)$ where $x \in [0,1]$ and defined by random numbers computed with the uniform distribution. The function $y$ is a quadratic polynomial in $x$ with added stochastic noise according to the normal distribution $\cal {N}(0,1)$.
-The following simple Python instructions define our $x$ and $y$ values (with 100 data points).
-!bc pycod
-x = np.random.rand(100,1)
-y = 2.0+5*x*x+0.1*np.random.randn(100,1)
-!ec
-
-o Write your own code (following the examples under the "regression notes":"https://compphysics.github.io/MachineLearning/doc/LectureNotes/_build/html/chapter1.html") for computing the parametrization of the data set fitting a second-order polynomial. 
-o Use thereafter _scikit-learn_ (see again the examples in the regression slides) and compare with your own code.   When compairing with _scikit_learn_, make sure you set the option for the intercept to _FALSE_, see URL:"https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html". This feature will be explained in more detail during the lectures of week 35 and week 36. You can find more in URL:"https://compphysics.github.io/MachineLearning/doc/LectureNotes/_build/html/chapter3.html#more-on-rescaling-data".
-o Using scikit-learn, compute also the mean square error, a risk metric corresponding to the expected value of the squared (quadratic) error defined as
-!bt 
-\[ MSE(\bm{y},\bm{\tilde{y}}) = \frac{1}{n}
-\sum_{i=0}^{n-1}(y_i-\tilde{y}_i)^2, 
-\] 
-!et 
-and the $R^2$ score function.
-If $\tilde{\bm{y}}_i$ is the predicted value of the $i-th$ sample and $y_i$ is the corresponding true value, then the score $R^2$ is defined as
-!bt
-\[
-R^2(\bm{y}, \tilde{\bm{y}}) = 1 - \frac{\sum_{i=0}^{n - 1} (y_i - \tilde{y}_i)^2}{\sum_{i=0}^{n - 1} (y_i - \bar{y})^2},
-\]
-!et
-where we have defined the mean value  of $\bm{y}$ as
-!bt
-\[
-\bar{y} =  \frac{1}{n} \sum_{i=0}^{n - 1} y_i.
-\]
-!et
-You can use the functionality included in scikit-learn. If you feel for it, you can use your own program and define functions which compute the above two functions. 
-Discuss the meaning of these results. Try also to vary the coefficient in front of the added stochastic noise term and discuss the quality of the fits.
-
-!bsol
-The code here is an example of where we define our own design matrix and fit parameters $\beta$.
-!bc pycod
-import os
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-
-def save_fig(fig_id):
-    plt.savefig(image_path(fig_id) + ".png", format='png')
-
-def R2(y_data, y_model):
-    return 1 - np.sum((y_data - y_model) ** 2) / np.sum((y_data - np.mean(y_data)) ** 2)
-def MSE(y_data,y_model):
-    n = np.size(y_model)
-    return np.sum((y_data-y_model)**2)/n
-
-x = np.random.rand(100)
-y = 2.0+5*x*x+0.1*np.random.randn(100)
-
-
-#  The design matrix now as function of a given polynomial
-X = np.zeros((len(x),3))
-X[:,0] = 1.0
-X[:,1] = x
-X[:,2] = x**2
-# We split the data in test and training data
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-# matrix inversion to find beta
-beta = np.linalg.inv(X_train.T @ X_train) @ X_train.T @ y_train
-print(beta)
-# and then make the prediction
-ytilde = X_train @ beta
-print("Training R2")
-print(R2(y_train,ytilde))
-print("Training MSE")
-print(MSE(y_train,ytilde))
-ypredict = X_test @ beta
-print("Test R2")
-print(R2(y_test,ypredict))
-print("Test MSE")
-print(MSE(y_test,ypredict))
-!ec
-!esol
-
-
-
-===== Exercise: Normalizing our data  =====
-
-
-A much used approach before starting to train the data is  to preprocess our
-data. Normally the data may need a rescaling and/or may be sensitive
-to extreme values. Scaling the data renders our inputs much more
-suitable for the algorithms we want to employ.
-
-_Scikit-Learn_ has several functions which allow us to rescale the
-data, normally resulting in much better results in terms of various
-accuracy scores.  The _StandardScaler_ function in _Scikit-Learn_
-ensures that for each feature/predictor we study the mean value is
-zero and the variance is one (every column in the design/feature
-matrix).  This scaling has the drawback that it does not ensure that
-we have a particular maximum or minimum in our data set. Another
-function included in _Scikit-Learn_ is the _MinMaxScaler_ which
-ensures that all features are exactly between $0$ and $1$. The
-
-
-The _Normalizer_ scales each data
-point such that the feature vector has a euclidean length of one. In other words, it
-projects a data point on the circle (or sphere in the case of higher dimensions) with a
-radius of 1. This means every data point is scaled by a different number (by the
-inverse of it’s length).
-This normalization is often used when only the direction (or angle) of the data matters,
-not the length of the feature vector.
-
-The _RobustScaler_ works similarly to the StandardScaler in that it
-ensures statistical properties for each feature that guarantee that
-they are on the same scale. However, the RobustScaler uses the median
-and quartiles, instead of mean and variance. This makes the
-RobustScaler ignore data points that are very different from the rest
-(like measurement errors). These odd data points are also called
-outliers, and might often lead to trouble for other scaling
-techniques.
-
-
-It also common to split the data in a _training_ set and a _testing_ set. A typical split is to use $80\%$ of the data for training and the rest
-for testing. This can be done as follows with our design matrix $\bm{X}$ and data $\bm{y}$ (remember to import _scikit-learn_)
-!bc pycod
-# split in training and test data
-X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2)
-!ec
-Then we can use the standard scaler to scale our data as
-!bc pycod
-scaler = StandardScaler()
-scaler.fit(X_train)
-X_train_scaled = scaler.transform(X_train)
-X_test_scaled = scaler.transform(X_test)
-!ec
-
-
-In this exercise we want you to to compute the MSE for the training
-data and the test data as function of the complexity of a polynomial,
-that is the degree of a given polynomial. We want you also to compute the $R2$ score as function of the complexity of the model for both training data and test data.  You should also run the calculation with and without scaling. 
-
-One of 
-the aims is to reproduce Figure 2.11 of "Hastie et al":"https://github.com/CompPhysics/MLErasmus/blob/master/doc/Textbooks/elementsstat.pdf".
-
-
-
-Our data is defined by $x\in [-3,3]$ with a total of for example $100$ data points.
-!bc pycod
-np.random.seed()
-n = 100
-maxdegree = 14
-# Make data set.
-x = np.linspace(-3, 3, n).reshape(-1, 1)
-y = np.exp(-x**2) + 1.5 * np.exp(-(x-2)**2)+ np.random.normal(0, 0.1, x.shape)
-!ec
-where $y$ is the function we want to fit with a given polynomial.
-!bsubex
-Write a first code which sets up a design matrix $X$ defined by a fifth-order polynomial.  Scale your data and split it in training and test data. 
-!esubex
-
-!bsubex
-Perform an ordinary least squares and compute the means squared error and the $R2$ factor for the training data and the test data, with and without scaling.
-!esubex
-
-!bsubex
-Add now a model which allows you to make polynomials up to degree $15$.  Perform a standard OLS fitting of the training data and compute the MSE and $R2$ for the training and test data and plot both test and training data MSE and $R2$ as functions of the polynomial degree. Compare what you see with Figure 2.11 of Hastie et al. Comment your results. For which polynomial degree do you find an optimal MSE (smallest value)?
-
-!esubex
-
-
-
-
-
-
-
-===== Exercise: Adding Ridge Regression  =====
-
-
-This exercise is a continuation of exercise 2. We will use the same function to
-generate our data set, still staying with a simple function $y(x)$
-which we want to fit using linear regression, but now extending the
-analysis to include the Ridge regression method.
-
-We will thus again generate our own dataset for a function $y(x)$ where 
-$x \in [0,1]$ and defined by random numbers computed with the uniform
-distribution. The function $y$ is a quadratic polynomial in $x$ with
-added stochastic noise according to the normal distribution $\cal{N}(0,1)$.
-
-The following simple Python instructions define our $x$ and $y$ values (with 100 data points).
-!bc pycod
-x = np.random.rand(100)
-y = 2.0+5*x*x+0.1*np.random.randn(100)
-!ec
-
-
-Write your own code for the Ridge method (see chapter 3.4 of Hastie *et al.*, equations (3.43) and (3.44)) and compute the parametrization for different values of $\lambda$. Compare and analyze your results with those from exercise 3. Study the dependence on $\lambda$ while also varying the strength of the noise in your expression for $y(x)$. 
-
-
-The code here allows you to perform your own Ridge calculation and
-perform calculations for various values of the regularization
-parameter $\lambda$. This program can easily be extended upon.
-
-!bc pycod
-import os
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-
-def R2(y_data, y_model):
-    return 1 - np.sum((y_data - y_model) ** 2) / np.sum((y_data - np.mean(y_data)) ** 2)
-def MSE(y_data,y_model):
-    n = np.size(y_model)
-    return np.sum((y_data-y_model)**2)/n
-
-
-# A seed just to ensure that the random numbers are the same for every run.
-# Useful for eventual debugging.
-np.random.seed(3155)
-
-x = np.random.rand(100)
-y = 2.0+5*x*x+0.1*np.random.randn(100)
-
-# number of features p (here degree of polynomial
-p = 3
-#  The design matrix now as function of a given polynomial
-X = np.zeros((len(x),p))
-X[:,0] = 1.0
-X[:,1] = x
-X[:,2] = x*x
-# We split the data in test and training data
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-
-# matrix inversion to find beta
-OLSbeta = np.linalg.inv(X_train.T @ X_train) @ X_train.T @ y_train
-print(OLSbeta)
-# and then make the prediction
-ytildeOLS = X_train @ OLSbeta
-print("Training R2 for OLS")
-print(R2(y_train,ytildeOLS))
-print("Training MSE for OLS")
-print(MSE(y_train,ytildeOLS))
-ypredictOLS = X_test @ OLSbeta
-print("Test R2 for OLS")
-print(R2(y_test,ypredictOLS))
-print("Test MSE OLS")
-print(MSE(y_test,ypredictOLS))
-
-# Repeat now for Ridge regression and various values of the regularization parameter
-I = np.eye(p,p)
-# Decide which values of lambda to use
-nlambdas = 20
-MSEPredict = np.zeros(nlambdas)
-MSETrain = np.zeros(nlambdas)
-lambdas = np.logspace(-4, 1, nlambdas)
-for i in range(nlambdas):
-    lmb = lambdas[i]
-    Ridgebeta = np.linalg.inv(X_train.T @ X_train+lmb*I) @ X_train.T @ y_train
-    # and then make the prediction
-    ytildeRidge = X_train @ Ridgebeta
-    ypredictRidge = X_test @ Ridgebeta
-    MSEPredict[i] = MSE(y_test,ypredictRidge)
-    MSETrain[i] = MSE(y_train,ytildeRidge)
-# Now plot the results
-plt.figure()
-plt.plot(np.log10(lambdas), MSETrain, label = 'MSE Ridge train')
-plt.plot(np.log10(lambdas), MSEPredict, 'r--', label = 'MSE Ridge Test')
-plt.xlabel('log10(lambda)')
-plt.ylabel('MSE')
-plt.legend()
-plt.show()
-!ec
-
-
-
-Repeat the above but using the functionality of
-_Scikit-Learn_. Compare your code with the results from
-_Scikit-Learn_. Remember to run with the same random numbers for
-generating $x$ and $y$.  Observe also that when you compare with _Scikit-Learn_, you need to pay attention to how the intercept is dealt with.
-
-
-
-Finally, using _Scikit-Learn_ or your own code, compute also the mean square error, a risk metric corresponding to the expected value of the squared (quadratic) error defined as
-!bt 
-\[ MSE(\hat{y},\hat{\tilde{y}}) = \frac{1}{n}
-\sum_{i=0}^{n-1}(y_i-\tilde{y}_i)^2, 
-\] 
-!et 
-and the $R^2$ score function.
-If $\tilde{\hat{y}}_i$ is the predicted value of the $i-th$ sample and $y_i$ is the corresponding true value, then the score $R^2$ is defined as
-!bt
-\[
-R^2(\hat{y}, \tilde{\hat{y}}) = 1 - \frac{\sum_{i=0}^{n - 1} (y_i - \tilde{y}_i)^2}{\sum_{i=0}^{n - 1} (y_i - \bar{y})^2},
-\]
-!et
-where we have defined the mean value  of $\hat{y}$ as
-!bt
-\[
-\bar{y} =  \frac{1}{n} \sum_{i=0}^{n - 1} y_i.
-\]
-!et
-Discuss these quantities as functions of the variable $\lambda$ in Ridge regression.
-
-
-
-===== Exercise: Analytical exercises  =====
-
-In this exercise we derive the expressions for various derivatives of
-products of vectors and matrices. Such derivatives are central to the
-optimization of various cost functions. Although we will often use
-automatic differentiation in actual calculations, to be able to have
-analytical expressions is extremely helpful in case we have simpler
-derivatives as well as when we analyze various properties (like second
-derivatives) of the chosen cost functions.  Vectors are always written
-as boldfaced lower case letters and matrices as upper case boldfaced
-letters.
-
-Show that
-!bt
-\[
-\frac{\partial (\bm{b}^T\bm{a})}{\partial \bm{a}} = \bm{b},
-\]
-!et
-and
-!bt
-\[
-\frac{\partial (\bm{a}^T\bm{A}\bm{a})}{\partial \bm{a}} = \bm{a}^T(\bm{A}+\bm{A}^T),
-\]
-!et
-and
-!bt
-\[
-\frac{\partial \left(\bm{x}-\bm{A}\bm{s}\right)^T\left(\bm{x}-\bm{A}\bm{s}\right)}{\partial \bm{s}} = -2\left(\bm{x}-\bm{A}\bm{s}\right)^T\bm{A},
-\]
-!et
-and finally find the second derivative of this function with respect to the vector $\bm{s}$.
-
-_Hint_: In these exercises it is always useful to write out with summation indices the various quantities.
-As an example, consider the function
-
-!bt
-\[
-f(\bm{x}) =\bm{A}\bm{x},
-\]
-!et
-which reads for a specific component $f_i$ (we define the matrix $\bm{A}$ to have dimension $n\times n$ and the vector $\bm{x} to have length $n$)
-
-!bt
-\[
-f_i =\sum_{j=0}^{n-1}a_{ij}x_j, 
-\]
-!et
-which leads to
-!bt
-\[
-\frac{\partial f_i}{\partial x_j}= a_{ij},
-\]
-!et
-and written out in terms of the vector $\bm{x}$ we have
-!bt
-\[
-\frac{\partial f(\bm{x})}{\partial \bm{x}}= \bm{A}.
-\]
-!et
 
 
