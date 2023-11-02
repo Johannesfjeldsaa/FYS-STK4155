@@ -268,11 +268,27 @@ class Preprocess_Climate_Data:
 
         return climatology_dataset
 
-    def create_spatial_climatology(self, dataset, var_name=None,
+    def create_spatial_climatology(self, dataset, var_name,
                                    climatology_type="zonal",
                                    save_to_dataset=False,
                                    file_name=None,
                                    directory=None):
+        """
+        Create a spatial climatology from a dataset. averaging over horizontal dimensions.
+        1. Average over the normal horizontal dimension.
+        2. Write the climatology to new dataset with new horizontal dimension.
+
+        Parameters:
+        - dataset (xr.Dataset): An xarray dataset.
+        - var_name (str): The name of the variable to create the climatology from.
+        - climatology_type (str): The type of climatology to create. Either "zonal" or "meridional".
+        - save_to_dataset (bool): Whether or not to create a new file saved in the dataset directory. If True,
+        the dataset will be saved in the dataset directory with the name original_name+"_zonal/meridional.nc".
+        - file_name (str): The name of the original file that the climatology is calculated from. If save_to_dataset
+        this must be provided.
+
+        returns: xr.DataArray: An xarray dataset with a spatial climatology.
+        """
 
         if climatology_type == "zonal":
             key_word = "lon"
@@ -305,13 +321,10 @@ class Preprocess_Climate_Data:
 
         #return dataset
 
-    def make_climatology_data(self, dataset, climatology_type="monthly"):
+    def seasonal_trend_decompose(self):
         pass
-        #if climatology_type == "monthly":
-        #    dataset = dataset.groupby("time.month").mean("time")
 
-        #return dataset
-
+    
     def detrend(self, dataset):
         """
         Detrend the dataset.
